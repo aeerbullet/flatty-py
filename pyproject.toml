@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flatty-py"
+version = "1.0.0"
+authors = [
+  { name="Your Name", email="your.email@example.com" },
+]
+description = "Transform any GitHub repo or folder into a simple text file for LLMs."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "pyperclip>=1.8.0", # 用于跨平台剪贴板支持
+]
+
+[project.scripts]
+flatty = "flatty.cli:main"
