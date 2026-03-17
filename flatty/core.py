@@ -8,7 +8,7 @@ from typing import List, Optional, Set, Pattern
 import fnmatch
 
 # 配置常量
-SEPARATOR = "====================================SEPARATOR=================================="
+SEPARATOR_TEMPLATE = "=================FILENAME【{}】==================="
 DEFAULT_OUTPUT_DIR = Path.home() / "Documents" / "flatty"
 
 # 需要排除的目录名 - 支持通配符模式
@@ -49,6 +49,10 @@ EXCLUDED_FILE_PATTERNS: Set[str] = {
     '*.lock',         # 锁文件
     '*.pid',          # 进程ID文件
     '*.pyc?',         # 匹配 .pyc 后可能还有字符的情况
+    'README-*.md',        # 匹配所有 README-xxx.md
+    'README.*.md',        # 另一种写法，匹配 README.zh.md 等
+    'README-??.md',       # 匹配两个字符的语言代码，如 README-cn.md
+    'README-??-??.md',    # 匹配 README-zh-CN.md
 }
 
 def compile_patterns(patterns: Set[str]) -> List[Pattern]:
@@ -214,24 +218,18 @@ def run_flatty(patterns: List[str], condition: str, output_dir: Optional[Path] =
     lines.append("# (showing all directories and files with token counts)")
 
     # Build Structure Tree
-    # 为了模拟原版的目录树结构，我们需要先收集所有有效的文件
     valid_files = []
     for f in all_files:
         if is_text_file(f) and matches_patterns(f, patterns, condition):
             valid_files.append(f)
 
-    # 计算目录 token (模拟原版逻辑：遍历目录计算文件总和)
-    # 为了简化 Python 实现，我们可以构建一个树状结构
-    # 这里为了简单，直接遍历输出
-    
-    # 1. Directories
+    # 目录树输出部分保持不变
     dirs = sorted(set([f.parent for f in valid_files]))
     for d in dirs:
         rel_dir = d.relative_to(root_path)
         depth = len(rel_dir.parts) - 1 if str(rel_dir) != '.' else 0
         indent = "  " * depth
         
-        # Calc tokens for this directory
         dir_tokens = sum(estimate_tokens(f) for f in valid_files if f.parent == d)
         
         if str(rel_dir) == '.':
@@ -239,28 +237,24 @@ def run_flatty(patterns: List[str], condition: str, output_dir: Optional[Path] =
         else:
             lines.append(f"#{indent}{rel_dir}/ (~{dir_tokens} tokens)")
 
-        # List files in this dir
         files_in_dir = sorted([f for f in valid_files if f.parent == d])
         for f in files_in_dir:
             tokens = estimate_tokens(f)
             lines.append(f"#{indent}  └── {f.name} (~{tokens} tokens)")
 
     lines.append("#")
-    lines.append(SEPARATOR)
 
-    # 2. File Contents
+    # 2. File Contents - 使用新的分隔符格式
     for f in valid_files:
         try:
             content = f.read_text(encoding='utf-8')
-            lines.append(SEPARATOR)
-            lines.append(str(f.relative_to(root_path)))
-            lines.append(SEPARATOR)
+            # 使用新的分隔符模板，格式为：=================FILENAME【文件路径】===================
+            rel_path = str(f.relative_to(root_path))
+            lines.append(SEPARATOR_TEMPLATE.format(rel_path))
             lines.append(content)
-            lines.append("") # newline at end
+            lines.append("")  # 空行
         except Exception as e:
             print(f"Warning: Could not read {f}: {e}", file=sys.stderr)
-
-    lines.append(SEPARATOR)
 
     # Write output
     output_path.write_text("\n".join(lines), encoding='utf-8')

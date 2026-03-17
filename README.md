@@ -4,75 +4,73 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://img.shields.io/badge/pypi-v1.0.0-green.svg)](https://pypi.org/project/flatty-py/)
 
-**Flatty-Py** 是一个Python重写版的 [Flatty](https://github.com/mattmireles/Flatty)，能够将任何本地Git仓库或文件夹转换为一个结构清晰的文本文件，特别适合用于向ChatGPT、Claude等大语言模型（LLM）提供代码上下文。
+**Flatty-Py** is a Python rewrite of [Flatty](https://github.com/mattmireles/Flatty) that transforms any local Git repository or folder into a single, well-structured text file. It's perfect for providing code context to Large Language Models (LLMs) like ChatGPT and Claude. And it provides Token statistics feature, which helps you understand the Token count of the generated text file.
 
-## ✨ 为什么选择 Python 重写版？
+LLMs like ChatGPT and Claude allow you to upload files, but they limit the number of files you can upload at once. When dealing with large codebases containing hundreds of files, you can't simply upload them all to an LLM. You end up having to use RAG (Retrieval-Augmented Generation) techniques, which in my experience, aren't as effective as uploading everything into the full context window—especially when you need to reason about architecture or understand the entire system.
 
-| 特性 | 原始 Flatty (Shell) | Flatty-Py (Python) |
-|------|---------------------|-------------------|
-| 🌍 **跨平台** | Linux/macOS 优先 | Windows/Linux/macOS 全支持 |
-| 📦 **安装方式** | 手动下载脚本 | `pip install flatty-py` |
-| 🔧 **依赖** | 依赖Unix工具链 | 纯Python实现，依赖极少 |
-| 🎯 **过滤功能** | 基础文件名过滤 | 文件名+内容组合过滤 |
-| 📋 **剪贴板** | 需手动配置 | 自动复制（可选） |
+ [English](README.md) | [中文](README-cn.md)
 
-## 🚀 快速开始
+## ✨ Why a Python Rewrite?
 
-### 安装
+The original project is implemented in Shell and only runs on Unix-like systems (Linux/macOS). This Python rewrite has no such limitations and works seamlessly on Windows, Linux, and macOS.
+
+## 🚀 Quick Start
+
+### Installation
 
 ```bash
-# 从源码安装
+# Install from source
 git clone https://github.com/yourusername/flatty-py.git
 cd flatty-py
 pip install .
 
-# 或者直接使用 pip（发布后）
+# Or via pip (once published)
 # pip install flatty-py
 ```
 
-### 基础用法
+### Basic Usage
 
-在想要"扁平化"的目录下运行：
+Run in the directory you want to "flatten":
 
 ```bash
 flatty
 ```
 
-这将在 `~/Documents/flatty/` 目录下生成一个包含完整项目结构的文本文件，文件名格式为：`{项目名}-v{版本}-{时间戳}.txt`。
+This will generate a text file in `~/Documents/flatty/` with the complete project structure. The filename format is: `{project-name}-v{version}-{timestamp}.txt`.
 
-### 高级过滤
+### Advanced Filtering
 
-**OR 条件匹配**（默认）：包含任意一个模式的文件
+**OR condition** (default): Include files matching any pattern
 ```bash
 flatty --pattern "useEffect" --pattern "async function" --condition OR
 ```
 
-**AND 条件匹配**：同时包含所有模式的文件
+**AND condition**: Include files matching all patterns
 ```bash
 flatty --pattern "TODO" --pattern "FIXME" --condition AND
 ```
 
-## 📖 完整使用指南
+## 📖 Complete Usage Guide
 
-### 命令行参数
+### Command Line Arguments
 
-| 参数 | 说明 | 示例 |
+| Argument | Description | Example |
 |------|------|------|
-| `--pattern` | 过滤模式（可多次使用） | `--pattern "class" --pattern "def"` |
-| `--condition` | 多模式组合条件：`AND` 或 `OR`（默认：`OR`） | `--condition AND` |
+| `--pattern` | Filter pattern (can be used multiple times) | `--pattern "class" --pattern "def"` |
+| `--condition` | Pattern combination condition: `AND` or `OR` (default: `OR`) | `--condition AND` |
 
-### 输出文件结构
+### Output File Structure
 
-生成的文本文件包含两部分：
+The generated text file contains two parts:
 
-1. **目录树结构**（带Token估算）
+1. **Directory Tree Structure** (with token estimates)
    ```
    # ./
    #   └── flatty/ (~2345 tokens)
    #     └── core.py (~2167 tokens)
    ```
 
-2. **文件内容**（完整代码）
+2. **File Contents** (complete code)
    ```
    ====================================SEPARATOR==================================
    flatty/core.py
@@ -81,103 +79,104 @@ flatty --pattern "TODO" --pattern "FIXME" --condition AND
    ...
    ```
 
-### 智能过滤规则
+### Smart Filtering Rules
 
-系统会自动排除：
-- **二进制文件**：图片、音频、视频、编译产物等
-- **版本控制目录**：`.git`、`.svn` 等
-- **依赖目录**：`node_modules`、`venv`、`__pycache__` 等
-- **IDE配置**：`.idea`、`.vscode` 等
-- **临时文件**：`*.swp`、`*.log`、`*.tmp` 等
-- **包构建目录**：`*.egg-info`、`dist`、`build` 等
+The system automatically excludes:
+- **Binary files**: images, audio, video, compiled artifacts, etc.
+- **Version control directories**: `.git`, `.svn`, etc.
+- **Dependency directories**: `node_modules`, `venv`, `__pycache__`, etc.
+- **IDE configurations**: `.idea`, `.vscode`, etc.
+- **Temporary files**: `*.swp`, `*.log`, `*.tmp`, etc.
+- **Build directories**: `*.egg-info`, `dist`, `build`, etc.
 
-## 🎯 应用场景
+## 🎯 Use Cases
 
-### 1. **向 LLM 提供代码上下文**
+### 1. **Providing Code Context to LLMs**
 ```bash
-# 生成整个项目文件，直接粘贴到 ChatGPT
+# Generate the entire project file and paste directly into ChatGPT
 flatty
 ```
 
-### 2. **代码审查准备**
+### 2. **Code Review Preparation**
 ```bash
-# 只提取包含关键逻辑的文件
+# Extract only files containing key logic
 flatty --pattern "def process" --pattern "class Handler"
 ```
 
-### 3. **项目文档生成**
+### 3. **Project Documentation Generation**
 ```bash
-# 提取所有文档和配置文件
+# Extract all documentation and configuration files
 flatty --pattern ".md" --pattern ".txt" --pattern "LICENSE"
 ```
 
-### 4. **查找特定代码模式**
+### 4. **Finding Specific Code Patterns**
 ```bash
-# 查找同时包含 TODO 和 BUG 的文件
+# Find files containing both TODO and BUG
 flatty --pattern "TODO" --pattern "BUG" --condition AND
 ```
 
-## ⚙️ 高级配置
+## ⚙️ Advanced Configuration
 
-您可以通过修改 `core.py` 中的常量来自定义行为：
+You can customize behavior by modifying constants in `core.py`:
 
 ```python
-# 自定义输出目录
+# Custom output directory
 DEFAULT_OUTPUT_DIR = Path.home() / "Documents" / "flatty"
 
-# 添加需要排除的目录模式
+# Add directory patterns to exclude
 EXCLUDED_DIR_PATTERNS.add('custom_cache')
 
-# 添加需要包含的文本文件扩展名
+# Add text file extensions to include
 TEXT_EXTENSIONS.add('.vue')
 TEXT_EXTENSIONS.add('.svelte')
 ```
 
-## 🤝 贡献指南
+## 🤝 Contributing
 
-欢迎贡献代码、报告问题或提出新想法！
+Contributions, issues, and feature requests are welcome!
 
-1. Fork 本项目
-2. 创建您的特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交您的修改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开一个 Pull Request
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-### 开发环境设置
+### Development Setup
 
 ```bash
-# 克隆仓库
+# Clone the repository
 git clone https://github.com/yourusername/flatty-py.git
 cd flatty-py
 
-# 创建虚拟环境（可选但推荐）
+# Create a virtual environment (optional but recommended)
 python -m venv venv
 source venv/bin/activate  # Linux/macOS
 # venv\Scripts\activate  # Windows
 
-# 安装开发依赖
+# Install in development mode
 pip install -e .
 ```
 
-## 🙏 致谢
+## 🙏 Acknowledgements
 
-本项目是原始 [Flatty](https://github.com/mattmireles/Flatty) 的 **Python 重写版本**。
+This project is a **Python rewrite** of the original [Flatty](https://github.com/mattmireles/Flatty).
 
-*   **原作**: [Flatty](https://github.com/mattmireles/Flatty) 由 [mattmireles](https://github.com/mattmireles) 创建
-*   **灵感**: 感谢原作者的杰出工作，启发了这个更跨平台、更易安装的Python版本
+*   **Original Work**: [Flatty](https://github.com/mattmireles/Flatty) created by [mattmireles](https://github.com/mattmireles)
+*   **Inspiration**: Thanks to the original author's excellent work that inspired this more cross-platform, easier-to-install Python version
 
-## 📄 许可证
+## 📄 License
 
-本项目基于 **MIT 许可证** 开源。完整许可证内容请查看 [LICENSE](LICENSE) 文件。
+This project is open-sourced under the **MIT License**. See the [LICENSE](LICENSE) file for details.
 
 ```
 MIT License
 
-Copyright (c) 2024 [您的名字] (Python 重写版本)
-Copyright (c) [原项目年份] [原作者名] (原始 Flatty 版本)
+Copyright (c) 2024 [Your Name] (Python rewrite version)
+Copyright (c) [Original Project Year] [Original Author Name] (Original Flatty version)
 
 Permission is hereby granted...
 ```
+
 ---
 
-**Flatty-Py** - 让您的代码更易于被AI理解和处理！⭐ 如果这个项目对您有帮助，欢迎给个Star！ 
+**Flatty-Py** - Making your code easier for AI to understand and process! ⭐ Star this project on GitHub if you find it helpful!
