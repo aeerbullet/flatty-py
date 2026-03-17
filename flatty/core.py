@@ -6,6 +6,7 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Optional, Set, Pattern
 import fnmatch
+import platform
 
 # 配置常量
 SEPARATOR_TEMPLATE = "=================FILENAME【{}】==================="
@@ -157,6 +158,25 @@ def estimate_tokens(file_path: Path) -> int:
         return size // 4
     except OSError:
         return 0
+
+def is_root_directory() -> bool:
+    """
+    Check if the current working directory is a system root directory.
+    
+    Returns:
+        True if in root directory (e.g., / on Unix, C: on Windows), 
+        False otherwise
+    """
+    current_path = Path.cwd()
+    
+    # Get the root directory based on platform
+    if platform.system() == "Windows":
+        # On Windows, root is like C:\, D:\, etc.
+        root_drives = [f"{d}:\\" for d in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"]
+        return str(current_path).upper() in [d.upper() for d in root_drives]
+    else:
+        # On Unix-like systems (Linux, macOS), root is "/"
+        return str(current_path) == "/"
 
 def matches_patterns(file_path: Path, patterns: List[str], condition: str) -> bool:
     """检查文件是否匹配指定的模式（内容或文件名）"""
