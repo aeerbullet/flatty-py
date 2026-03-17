@@ -4,16 +4,20 @@ import re
 import sys
 from pathlib import Path
 from datetime import datetime
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Pattern
+import fnmatch
 
 # 配置常量
 SEPARATOR = "====================================SEPARATOR=================================="
 DEFAULT_OUTPUT_DIR = Path.home() / "Documents" / "flatty"
 
-# 需要排除的目录名
-EXCLUDED_DIRS: Set[str] = {
+# 需要排除的目录名 - 支持通配符模式
+EXCLUDED_DIR_PATTERNS: Set[str] = {
     '.git', 'node_modules', 'venv', '__pycache__', 'dist', 'build', 
-    '.idea', '.vscode', '.gradle', 'target'
+    '.idea', '.vscode', '.gradle', 'target', 'character',
+    '*.egg-info',  # 匹配所有以 .egg-info 结尾的目录
+    '*.cache',      # 匹配所有缓存目录
+    '__*__',        # 匹配所有双下划线包裹的目录（如 __pycache__, __MACOSX__ 等）
 }
 
 # 已知的文本文件扩展名
@@ -28,16 +32,89 @@ TEXT_EXTENSIONS: Set[str] = {
     'Makefile', 'Dockerfile', 'LICENSE'
 }
 
-# 需要排除的文件模式 (使用 fnmatch 或简单检查)
-EXCLUDED_FILE_PATTERNS = [
+# 需要排除的文件模式 - 支持通配符
+EXCLUDED_FILE_PATTERNS: Set[str] = {
     '*.swp', '*.swo', '*.pyc', '*.pyo', '*.o', '*.obj', '*.exe', '*.dll', 
     '*.so', '*.dylib', '*.class', '*.jar', '*.war', '*.ear', '*.zip', 
     '*.tar', '*.gz', '*.rar', '*.7z', '*.hex', '*.DS_Store', '*.png', 
-    '*.jpg', '*.jpeg', '*.gif', '*.ico', '*.pdf'
-]
+    '*.jpg', '*.jpeg', '*.gif', '*.ico', '*.pdf', '*.mp3', '*.wav', '*.flac',
+    '*.ogg', '*.m4a', '*.wma', '*.mp4',
+    '*.log',          # 日志文件
+    '*.tmp',          # 临时文件
+    '*.temp',         # 临时文件
+    '*.bak',          # 备份文件
+    '*.backup',       # 备份文件
+    '*~',             # 编辑器临时文件
+    '.#*',            # emacs 临时文件
+    '*.lock',         # 锁文件
+    '*.pid',          # 进程ID文件
+    '*.pyc?',         # 匹配 .pyc 后可能还有字符的情况
+}
+
+def compile_patterns(patterns: Set[str]) -> List[Pattern]:
+    """将通配符模式编译为正则表达式"""
+    compiled = []
+    for pattern in patterns:
+        # 将通配符模式转换为正则表达式
+        regex_pattern = fnmatch.translate(pattern)
+        compiled.append(re.compile(regex_pattern))
+    return compiled
+
+# 预编译排除模式
+EXCLUDED_DIR_REGEX = compile_patterns(EXCLUDED_DIR_PATTERNS)
+EXCLUDED_FILE_REGEX = compile_patterns(EXCLUDED_FILE_PATTERNS)
+
+def should_exclude_path(path: Path, is_dir: bool = False) -> bool:
+    """
+    检查路径是否应该被排除
+    
+    Args:
+        path: 要检查的路径
+        is_dir: 是否是目录（用于明确指定，如果为None则自动判断）
+    
+    Returns:
+        True 表示应该排除，False 表示保留
+    """
+    if is_dir is None:
+        is_dir = path.is_dir()
+    
+    # 检查路径的每个部分
+    for part in path.parts:
+        # 对每个部分应用正则匹配
+        regex_list = EXCLUDED_DIR_REGEX if is_dir else EXCLUDED_FILE_REGEX
+        for pattern_regex in regex_list:
+            if pattern_regex.match(part) or pattern_regex.match(str(path)):
+                return True
+    
+    return False
+
+def is_text_file(file_path: Path) -> bool:
+    """判断是否为需要处理的文本文件"""
+    name = file_path.name
+    suffix = file_path.suffix.lower()
+
+    # 1. 检查排除的文件模式（使用正则）
+    if should_exclude_path(file_path, is_dir=False):
+        return False
+    
+    # 2. 检查排除的目录（使用正则）
+    if should_exclude_path(file_path.parent, is_dir=True):
+        return False
+    
+    # 3. 检查已知文本扩展名或特定文件名
+    if suffix in TEXT_EXTENSIONS or name in TEXT_EXTENSIONS:
+        return True
+    
+    # 4. 对于未知扩展名，尝试读取内容判断
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            f.read(1024)
+        return True
+    except (UnicodeDecodeError, IOError):
+        return False
 
 def get_git_info() -> str:
-    """用于获取版本信息用于命名， 如果项目存在 git 仓库， 则返回 tag-commit_hash-dirty， 否则返回 dev-YYYYMMDD-dirty"""
+    """用于获取版本信息用于命名，如果项目存在 git 仓库，则返回 tag-commit_hash-dirty，否则返回 dev-YYYYMMDD-dirty"""
     try:
         # Check if inside a git repo
         subprocess.check_call(['git', 'rev-parse', '--is-inside-work-tree'], 
@@ -68,38 +145,6 @@ def get_git_info() -> str:
         return f"{tag}-{commit_hash}{dirty}"
     else:
         return f"{commit_hash}{dirty}"
-
-def is_text_file(file_path: Path) -> bool:
-    """判断是否为需要处理的文本文件"""
-    name = file_path.name
-    suffix = file_path.suffix.lower()
-
-    # 1. 检查排除的文件模式
-    for pattern in EXCLUDED_FILE_PATTERNS:
-        if pattern.startswith('*'):
-            if suffix == pattern[1:] or name.endswith(pattern[1:]):
-                return False
-        elif name == pattern:
-            return False
-    
-    # 2. 检查排除的目录 (path contains)
-    for part in file_path.parts:
-        if part in EXCLUDED_DIRS:
-            return False
-
-    # 3. 检查已知文本扩展名或特定文件名
-    if suffix in TEXT_EXTENSIONS or name in TEXT_EXTENSIONS:
-        return True
-    
-    # 4. 对于未知扩展名，尝试读取内容判断 (模拟 file command grep text)
-    # 简单方法：尝试解码 utf-8，失败则认为是二进制
-    # 为了性能，只读取前几KB
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            f.read(1024)
-        return True
-    except (UnicodeDecodeError, IOError):
-        return False
 
 def estimate_tokens(file_path: Path) -> int:
     """简单的 Token 估算：文件大小 / 4"""
