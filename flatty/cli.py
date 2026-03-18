@@ -1,7 +1,7 @@
 import argparse
 import os
 import sys
-from .core import run_flatty, is_root_directory
+from .core import run_flatty, is_root_directory, download_and_flattey
 
 def main():
     parser = argparse.ArgumentParser(
@@ -24,6 +24,9 @@ def main():
         action='store_true',
         help='Force execution even in root directory (not recommended)'
     )
+
+    parser.add_argument('-r', '--repo', help='Remote Git repository URL to flatten')
+    parser.add_argument('-b', '--branch', help='Branch or tag to clone')
     
     args = parser.parse_args()
     
@@ -40,8 +43,16 @@ def main():
         print("  flatty --force", file=sys.stderr)
         print("=" * 60, file=sys.stderr)
         sys.exit(1)
-    
-    run_flatty(patterns=args.pattern, condition=args.condition)
+
+    if args.repo:
+        # 忽略当前目录检查，直接克隆并扁平化
+        download_and_flattey(args.repo, args.branch, args.pattern, args.condition)
+    else:
+        # 原有根目录检查逻辑
+        if is_root_directory() and not args.force:
+            print(...)
+            sys.exit(1)
+        run_flatty(patterns=args.pattern, condition=args.condition)
 
 if __name__ == "__main__":
     main()
