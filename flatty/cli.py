@@ -104,6 +104,7 @@ def main():
             downloader = RepoDownloader(args.repo, args.branch)
             try:
                 work_dir = downloader.download()
+                work_dir = work_dir.resolve()  # 添加这行
                 project_name = downloader.project_name
             except Exception as e:
                 # 确保下载失败时清理

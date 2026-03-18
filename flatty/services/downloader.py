@@ -121,8 +121,9 @@ class RepoDownloader:
                 logger.warning(f"Multiple root directories found in archive. Using the first one: {subdirs[0].name}")
                 self.temp_dir = subdirs[0]
 
-            logger.info(f"✅ Download and extraction complete to: {self.temp_dir}")
-            return self.temp_dir
+            normalized_path = self.temp_dir.resolve()
+            logger.info(f"✅ Download and extraction complete to: {normalized_path}")
+            return normalized_path
 
         except requests.RequestException as e:
             raise DownloadError(f"Failed to download repository: {e}")
