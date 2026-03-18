@@ -4,13 +4,15 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://img.shields.io/badge/pypi-v1.0.0-green.svg)](https://pypi.org/project/flatty-py/)
 
-**Flatty-Py** 是一个Python重写版的 [Flatty](https://github.com/mattmireles/Flatty)，能够将任何本地Git仓库或文件夹转换为一个结构清晰的文本文件，特别适合用于向ChatGPT、Claude等大语言模型（LLM）提供代码上下文。并且提供Token统计功能，方便您了解生成的文本文件的Token数量。
+**Flatty-Py** 是一个 Python 重写的 [Flatty](https://github.com/mattmireles/Flatty) 工具，可以将任何本地 Git 仓库或文件夹转换为单个结构清晰的文本文件。它特别适合为大型语言模型（如 ChatGPT 和 Claude）提供代码上下文，并提供了 Token 统计功能，帮助你了解生成文本文件的 Token 数量。
 
-像ChatGPT和Claude这样的LLM允许您上传文件，但它们限制了您一次可以上传的文件数量。当你处理有大量文件的大型代码库时，你不能直接将它们上传到LLM。你最终不得不使用RAG（检索增强生成）技术，根据我的经验，这不如将所有内容上传到完整的上下文窗口有效——尤其是当你需要对架构进行推理或了解整个系统时。
+ChatGPT 和 Claude 虽然允许上传文件，但限制一次能上传的文件数量。当处理包含数百个文件的大型代码库时，你无法将所有文件都上传给 LLM。最终不得不使用 RAG（检索增强生成）技术，但根据我的经验，这种方式不如将整个代码库放入完整的上下文窗口中有效——尤其是在需要理解架构或把握整个系统的时候。
 
-## ✨ 为什么选择 Python 重写版？
+[English](README.md) | [中文](README-cn.md)
 
-原项目使用Shell实现，只能在Unix-like系统（如Linux/macOS）上运行。而本Python重写版则无此限制，可在Windows/Linux/macOS上无缝运行。
+## ✨ 为什么用 Python 重写？
+
+原项目使用 Shell 实现，仅支持 Unix-like 系统（Linux/macOS）。这个 Python 重写版本没有此类限制，可以完美运行在 Windows、Linux 和 macOS 上。
 
 ## 🚀 快速开始
 
@@ -22,28 +24,28 @@ git clone https://github.com/yourusername/flatty-py.git
 cd flatty-py
 pip install .
 
-# 或者直接使用 pip（发布后）
+# 或者通过 pip 安装（发布后）
 # pip install flatty-py
 ```
 
-### 基础用法
+### 基本用法
 
-在想要"扁平化"的目录下运行：
+在想要"扁平化"的目录中运行：
 
 ```bash
 flatty
 ```
 
-这将在 `~/Documents/flatty/` 目录下生成一个包含完整项目结构的文本文件，文件名格式为：`{项目名}-v{版本}-{时间戳}.txt`。
+这将在 `~/Documents/flatty/` 目录生成一个包含完整项目结构的文本文件。文件命名格式为：`{项目名}-v{版本}-{时间戳}.txt`。
 
 ### 高级过滤
 
-**OR 条件匹配**（默认）：包含任意一个模式的文件
+**OR 条件**（默认）：匹配任意模式的文件
 ```bash
 flatty --pattern "useEffect" --pattern "async function" --condition OR
 ```
 
-**AND 条件匹配**：同时包含所有模式的文件
+**AND 条件**：匹配所有模式的文件
 ```bash
 flatty --pattern "TODO" --pattern "FIXME" --condition AND
 ```
@@ -52,27 +54,37 @@ flatty --pattern "TODO" --pattern "FIXME" --condition AND
 
 ### 命令行参数
 
-| 参数 | 说明 | 示例 |
+| 参数 | 描述 | 示例 |
 |------|------|------|
-| `--pattern` | 过滤模式（可多次使用） | `--pattern "class" --pattern "def"` |
-| `--condition` | 多模式组合条件：`AND` 或 `OR`（默认：`OR`） | `--condition AND` |
+| `--pattern`, `-p` | 过滤模式（可多次使用） | `--pattern "class" --pattern "def"` |
+| `--condition`, `-c` | 模式组合条件：`AND` 或 `OR`（默认：`OR`） | `--condition AND` |
+| `--repo`, `-r` | 远程 Git 仓库 URL（支持 GitHub、GitLab、Gitee） | `-r https://github.com/user/repo` |
+| `--branch`, `-b` | 要克隆的分支或标签 | `-b main` |
+| `--force`, `-f` | 强制在根目录执行（危险！） | `--force` |
+| `--output-dir`, `-o` | 输出目录 | `-o ~/my-outputs` |
 
 ### 输出文件结构
 
-生成的文本文件包含两部分：
+生成的文本文件包含三部分：
 
-1. **目录树结构**（带Token估算）
+1. **文件头信息**（项目名、版本、生成时间）
    ```
+   my-project
+   Version: 1.0.0
+   Generated: 2026-03-19 01:36:17
+   ```
+
+2. **目录树结构**（附带 Token 估算）
+   ```
+   # Complete Repository Structure:
    # ./
    #   └── flatty/ (~2345 tokens)
    #     └── core.py (~2167 tokens)
    ```
 
-2. **文件内容**（完整代码）
+3. **文件内容**（完整代码）
    ```
-   ====================================SEPARATOR==================================
-   flatty/core.py
-   ====================================SEPARATOR==================================
+   ==================FILENAME【flatty/core.py】===================
    import os
    ...
    ```
@@ -83,21 +95,21 @@ flatty --pattern "TODO" --pattern "FIXME" --condition AND
 - **二进制文件**：图片、音频、视频、编译产物等
 - **版本控制目录**：`.git`、`.svn` 等
 - **依赖目录**：`node_modules`、`venv`、`__pycache__` 等
-- **IDE配置**：`.idea`、`.vscode` 等
+- **IDE 配置**：`.idea`、`.vscode` 等
 - **临时文件**：`*.swp`、`*.log`、`*.tmp` 等
-- **包构建目录**：`*.egg-info`、`dist`、`build` 等
+- **构建目录**：`*.egg-info`、`dist`、`build` 等
 
-## 🎯 应用场景
+## 🎯 使用场景
 
-### 1. **向 LLM 提供代码上下文**
+### 1. **为 LLM 提供代码上下文**
 ```bash
-# 生成整个项目文件，直接粘贴到 ChatGPT
+# 生成完整的项目文件，直接粘贴到 ChatGPT
 flatty
 ```
 
 ### 2. **代码审查准备**
 ```bash
-# 只提取包含关键逻辑的文件
+# 只提取包含核心逻辑的文件
 flatty --pattern "def process" --pattern "class Handler"
 ```
 
@@ -113,33 +125,48 @@ flatty --pattern ".md" --pattern ".txt" --pattern "LICENSE"
 flatty --pattern "TODO" --pattern "BUG" --condition AND
 ```
 
+### 5. **处理远程仓库**
+```bash
+# 直接处理 GitHub 上的项目
+flatty -r https://github.com/user/repo -b main
+```
+
 ## ⚙️ 高级配置
 
-您可以通过修改 `core.py` 中的常量来自定义行为：
+你可以通过修改 `flatty/config.py` 中的常量来自定义行为：
 
 ```python
 # 自定义输出目录
 DEFAULT_OUTPUT_DIR = Path.home() / "Documents" / "flatty"
 
-# 添加需要排除的目录模式
+# 添加要排除的目录模式
 EXCLUDED_DIR_PATTERNS.add('custom_cache')
 
-# 添加需要包含的文本文件扩展名
+# 添加要包含的文本文件扩展名
 TEXT_EXTENSIONS.add('.vue')
 TEXT_EXTENSIONS.add('.svelte')
 ```
 
+## 🔧 技术特性
+
+- **跨平台支持**：Windows、Linux、macOS 完美运行
+- **智能版本检测**：自动从 Git tag、pyproject.toml、package.json 提取版本号
+- **准确的 Token 估算**：可选集成 `tiktoken` 进行精确的 Token 计数
+- **远程仓库支持**：直接处理 GitHub、GitLab、Gitee 上的项目
+- **.gitignore 支持**：自动遵循项目的 .gitignore 规则
+- **安全防护**：防止 Zip Slip 攻击，根目录执行警告
+
 ## 🤝 贡献指南
 
-欢迎贡献代码、报告问题或提出新想法！
+欢迎提交贡献、Issue 和功能请求！
 
-1. Fork 本项目
-2. 创建您的特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交您的修改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开一个 Pull Request
+1. Fork 项目
+2. 创建功能分支（`git checkout -b feature/AmazingFeature`）
+3. 提交更改（`git commit -m 'Add some AmazingFeature'`）
+4. 推送到分支（`git push origin feature/AmazingFeature`）
+5. 提交 Pull Request
 
-### 开发环境设置
+### 开发环境搭建
 
 ```bash
 # 克隆仓库
@@ -151,29 +178,61 @@ python -m venv venv
 source venv/bin/activate  # Linux/macOS
 # venv\Scripts\activate  # Windows
 
-# 安装开发依赖
+# 以开发模式安装
 pip install -e .
+
+# 安装开发依赖
+pip install -e ".[dev]"
+
+# 安装可选依赖（更准确的 Token 计数）
+pip install -e ".[accurate-tokens]"
+```
+
+## 📊 项目结构
+
+```
+flatty-py/
+├── flatty/
+│   ├── __init__.py          # 包初始化
+│   ├── cli.py                # 命令行入口
+│   ├── config.py             # 配置管理
+│   ├── exceptions.py         # 自定义异常
+│   ├── services/
+│   │   ├── downloader.py     # 远程仓库下载
+│   │   ├── formatter.py      # 格式化输出
+│   │   └── scanner.py        # 文件扫描
+│   └── utils/
+│       ├── logger.py         # 日志工具
+│       └── security.py       # 安全检查
+├── pyproject.toml            # 项目配置
+├── README.md                 # 说明文档
+└── LICENSE                   # 许可证
 ```
 
 ## 🙏 致谢
 
-本项目是原始 [Flatty](https://github.com/mattmireles/Flatty) 的 **Python 重写版本**。
+本项目是对原 [Flatty](https://github.com/mattmireles/Flatty) 的 **Python 重写**。
 
-*   **原作**: [Flatty](https://github.com/mattmireles/Flatty) 由 [mattmireles](https://github.com/mattmireles) 创建
-*   **灵感**: 感谢原作者的杰出工作，启发了这个更跨平台、更易安装的Python版本
+*   **原项目**：[Flatty](https://github.com/mattmireles/Flatty)，作者 [mattmireles](https://github.com/mattmireles)
+*   **灵感**：感谢原作者出色的工作，启发了这个更具跨平台性、更易安装的 Python 版本
 
 ## 📄 许可证
 
-本项目基于 **MIT 许可证** 开源。完整许可证内容请查看 [LICENSE](LICENSE) 文件。
+本项目采用 **MIT 许可证**开源。详情请参阅 [LICENSE](LICENSE) 文件。
 
 ```
 MIT License
 
-Copyright (c) 2024 [您的名字] (Python 重写版本)
-Copyright (c) [原项目年份] [原作者名] (原始 Flatty 版本)
+Copyright (c) 2026 zhangee (Python 重写版本)
+Copyright (c) 2025 mattmireles (原 Flatty 版本)
 
-Permission is hereby granted...
+特此免费授予任何获得本软件及相关文档文件（"软件"）副本的人不受限制地处理本软件的权利，包括但不限于使用、复制、修改、合并、发布、分发、再许可和/或销售软件副本的权利，并允许获得软件的人这样做，但须符合以下条件：
+
+上述版权声明和本许可声明应包含在软件的所有副本或主要部分中。
+
+本软件按"原样"提供，不提供任何形式的明示或暗示保证，包括但不限于适销性、特定用途适用性和非侵权性的保证。在任何情况下，作者或版权持有人均不对任何索赔、损害或其他责任负责，无论是合同诉讼、侵权行为还是其他行为，均由软件或软件的使用或其他交易引起、出自或与之相关。
 ```
+
 ---
 
-**Flatty-Py** - 让您的代码更易于被AI理解和处理！⭐ 如果这个项目对您有帮助，欢迎给个Star！ 
+**Flatty-Py** - 让你的代码更容易被 AI 理解和处理！如果觉得有用，请在 GitHub 上给这个项目点个 ⭐！

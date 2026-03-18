@@ -4,11 +4,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://img.shields.io/badge/pypi-v1.0.0-green.svg)](https://pypi.org/project/flatty-py/)
 
-**Flatty-Py** is a Python rewrite of [Flatty](https://github.com/mattmireles/Flatty) that transforms any local Git repository or folder into a single, well-structured text file. It's perfect for providing code context to Large Language Models (LLMs) like ChatGPT and Claude. And it provides Token statistics feature, which helps you understand the Token count of the generated text file.
+**Flatty-Py** is a Python rewrite of [Flatty](https://github.com/mattmireles/Flatty) that transforms any local Git repository or folder into a single, well-structured text file. It's perfect for providing code context to Large Language Models (LLMs) like ChatGPT and Claude, featuring Token statistics to help you understand the token count of the generated text file.
 
 LLMs like ChatGPT and Claude allow you to upload files, but they limit the number of files you can upload at once. When dealing with large codebases containing hundreds of files, you can't simply upload them all to an LLM. You end up having to use RAG (Retrieval-Augmented Generation) techniques, which in my experience, aren't as effective as uploading everything into the full context window—especially when you need to reason about architecture or understand the entire system.
 
- [English](README.md) | [中文](README-cn.md)
+[English](README.md) | [中文](README-cn.md)
 
 ## ✨ Why a Python Rewrite?
 
@@ -56,25 +56,35 @@ flatty --pattern "TODO" --pattern "FIXME" --condition AND
 
 | Argument | Description | Example |
 |------|------|------|
-| `--pattern` | Filter pattern (can be used multiple times) | `--pattern "class" --pattern "def"` |
-| `--condition` | Pattern combination condition: `AND` or `OR` (default: `OR`) | `--condition AND` |
+| `--pattern`, `-p` | Filter pattern (can be used multiple times) | `--pattern "class" --pattern "def"` |
+| `--condition`, `-c` | Pattern combination condition: `AND` or `OR` (default: `OR`) | `--condition AND` |
+| `--repo`, `-r` | Remote Git repository URL (GitHub, GitLab, Gitee) | `-r https://github.com/user/repo` |
+| `--branch`, `-b` | Branch or tag to clone | `-b main` |
+| `--force`, `-f` | Force execution in root directory (DANGEROUS!) | `--force` |
+| `--output-dir`, `-o` | Output directory | `-o ~/my-outputs` |
 
 ### Output File Structure
 
-The generated text file contains two parts:
+The generated text file contains three parts:
 
-1. **Directory Tree Structure** (with token estimates)
+1. **Header Information** (project name, version, generation time)
    ```
+   my-project
+   Version: 1.0.0
+   Generated: 2026-03-19 01:36:17
+   ```
+
+2. **Directory Tree Structure** (with token estimates)
+   ```
+   # Complete Repository Structure:
    # ./
    #   └── flatty/ (~2345 tokens)
    #     └── core.py (~2167 tokens)
    ```
 
-2. **File Contents** (complete code)
+3. **File Contents** (complete code)
    ```
-   ====================================SEPARATOR==================================
-   flatty/core.py
-   ====================================SEPARATOR==================================
+   ==================FILENAME【flatty/core.py】===================
    import os
    ...
    ```
@@ -115,9 +125,15 @@ flatty --pattern ".md" --pattern ".txt" --pattern "LICENSE"
 flatty --pattern "TODO" --pattern "BUG" --condition AND
 ```
 
+### 5. **Processing Remote Repositories**
+```bash
+# Directly process projects from GitHub
+flatty -r https://github.com/user/repo -b main
+```
+
 ## ⚙️ Advanced Configuration
 
-You can customize behavior by modifying constants in `core.py`:
+You can customize behavior by modifying constants in `flatty/config.py`:
 
 ```python
 # Custom output directory
@@ -130,6 +146,15 @@ EXCLUDED_DIR_PATTERNS.add('custom_cache')
 TEXT_EXTENSIONS.add('.vue')
 TEXT_EXTENSIONS.add('.svelte')
 ```
+
+## 🔧 Technical Features
+
+- **Cross-platform Support**: Works perfectly on Windows, Linux, and macOS
+- **Smart Version Detection**: Automatically extracts version from Git tags, pyproject.toml, package.json
+- **Accurate Token Estimation**: Optional integration with `tiktoken` for precise token counting
+- **Remote Repository Support**: Directly process projects from GitHub, GitLab, Gitee
+- **.gitignore Support**: Automatically respects your project's .gitignore rules
+- **Security Protection**: Prevents Zip Slip attacks, root directory execution warnings
 
 ## 🤝 Contributing
 
@@ -155,6 +180,33 @@ source venv/bin/activate  # Linux/macOS
 
 # Install in development mode
 pip install -e .
+
+# Install development dependencies
+pip install -e ".[dev]"
+
+# Install optional dependencies (for more accurate token counting)
+pip install -e ".[accurate-tokens]"
+```
+
+## 📊 Project Structure
+
+```
+flatty-py/
+├── flatty/
+│   ├── __init__.py          # Package initialization
+│   ├── cli.py                # Command-line interface
+│   ├── config.py             # Configuration management
+│   ├── exceptions.py         # Custom exceptions
+│   ├── services/
+│   │   ├── downloader.py     # Remote repository download
+│   │   ├── formatter.py      # Output formatting
+│   │   └── scanner.py        # File scanning
+│   └── utils/
+│       ├── logger.py         # Logging utilities
+│       └── security.py       # Security checks
+├── pyproject.toml            # Project configuration
+├── README.md                 # Documentation
+└── LICENSE                   # License file
 ```
 
 ## 🙏 Acknowledgements
@@ -171,10 +223,26 @@ This project is open-sourced under the **MIT License**. See the [LICENSE](LICENS
 ```
 MIT License
 
-Copyright (c) 2024 [Your Name] (Python rewrite version)
-Copyright (c) [Original Project Year] [Original Author Name] (Original Flatty version)
+Copyright (c) 2026 zhangee (Python rewrite version)
+Copyright (c) 2025 mattmireles (Original Flatty version)
 
-Permission is hereby granted...
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```
 
 ---
